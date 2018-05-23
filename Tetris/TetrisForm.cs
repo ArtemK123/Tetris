@@ -1,56 +1,44 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Tetris
 {
     public partial class TetrisForm : Form
     {
-        bool gameover = false;
+        bool gameover = true;
         Figure figure;
         Figure nextFigure;
-        int[][] mine;
+        int[][] gameboard;
         int[] rows = new int[21];
         int[] points = new int[] { 100, 300, 700, 1500 };
         int score = 0;
-
-        private void TetrisForm_Load(object sender, EventArgs e)
-        { 
-            Start();
-        }
-
-        private void startBotton_Click(object sender, EventArgs e)
-        {
-           Start();
-        }
+        bool pause = true;
 
         void Start()
         {
+            gameoverLabel.Visible = false;
             figure = MakeFigure();
             nextFigure = MakeFigure();
             DrawNextFigure();
             timer.Start();
             gameover = false;
-            mine = new int[21][];
+            pause = false;
+            gameboard = new int[21][];
             rows = new int[21];
             for (int i = 0; i < 21; i++)
             {
-                mine[i] = new int[10];
+                gameboard[i] = new int[10];
                 for (int j = 0; j < 10; j++)
                 {
-                    mine[i][j] = -1;
+                    gameboard[i][j] = -1;
                 }
                 rows[i] = 0;
             }
             for (int i = 0; i < 10; i++)
             {
-                mine[20][i] = 1;
+                gameboard[20][i] = 1;
             }
             scoreBox.Text = "0";
         }
@@ -64,7 +52,7 @@ namespace Tetris
                     Redraw();
                     if (IsOnGround())
                     {
-                        LeaveOnGround(Figure.FindColor(figure.color));
+                        LeaveOnGround();
                         CheckFilling();
                         figure = nextFigure;
                         nextFigure = MakeFigure();
@@ -76,7 +64,7 @@ namespace Tetris
                         MoveFigure(0, 1);
                     }
                 }
-                catch (Exception err)
+                catch (Exception)
                 {
                     timer.Stop();
                     scoreBox.Text = "Error";
@@ -145,7 +133,7 @@ namespace Tetris
                     || block.x > 9
                     || block.y > 19
                     || block.y < 0
-                    || mine[block.y][block.x] > -1)
+                    || gameboard[block.y][block.x] > -1)
                 {
                     return true;
                 }
@@ -157,7 +145,7 @@ namespace Tetris
         {
             foreach (Block block in figure.blocks)
             {
-                if (mine[block.y + 1][block.x] > -1)
+                if (gameboard[block.y + 1][block.x] > -1)
                 {
                     return true;
                 }
@@ -169,7 +157,7 @@ namespace Tetris
         {
             foreach (Block block in figure.blocks)
             {
-                if (mine[block.y][block.x] > -1)
+                if (gameboard[block.y][block.x] > -1)
                 {
                     return true;
                 }
@@ -177,12 +165,13 @@ namespace Tetris
             return false;
         }
 
-        void LeaveOnGround (int colorNumber) 
+        void LeaveOnGround () 
         {
+            int colorNumber = Figure.FindColor(figure.color);
             foreach (Block block in figure.blocks)
             {
                 //colorNumber - number in Figure.colors
-                mine[block.y][block.x] = colorNumber;
+                gameboard[block.y][block.x] = colorNumber;
                 rows[block.y]++;
             }
         }
@@ -193,14 +182,14 @@ namespace Tetris
             {
                 if (direction == "left")
                 {
-                    if (block.x == 0 || mine[block.y][block.x - 1] > -1)
+                    if (block.x == 0 || gameboard[block.y][block.x - 1] > -1)
                     {
                         return true;
                     }
                 }
                 if (direction == "right")
                 {
-                    if (block.x == 9 || mine[block.y][block.x + 1] > -1)
+                    if (block.x == 9 || gameboard[block.y][block.x + 1] > -1)
                     {
                         return true;
                     }
@@ -236,7 +225,7 @@ namespace Tetris
                     rows[i] = rows[i - lines];
                     for (int j = 0; j < 10; j++)
                     {
-                        mine[i][j] = mine[i - lines][j];
+                        gameboard[i][j] = gameboard[i - lines][j];
                     }
                 }
                 for (int i = lines - 1; i >= 0; i--)
@@ -244,7 +233,7 @@ namespace Tetris
                     rows[i] = 0;
                     for (int j = 0; j < 10; j++)
                     {
-                        mine[i][j] = -1;
+                        gameboard[i][j] = -1;
                     }
                 }
             }
@@ -270,15 +259,15 @@ namespace Tetris
 
         void Redraw()
         {
-            Bitmap bmp = new Bitmap(gameboard.Width, gameboard.Height);
+            Bitmap bmp = new Bitmap(boardBox.Width, boardBox.Height);
             Graphics g = Graphics.FromImage(bmp);
             for (int i = 0; i < 20; i++)
             {
                 for (int j = 0; j < 10; j++)
                 {
-                    if (mine[i][j] > -1)
+                    if (gameboard[i][j] > -1)
                     {
-                        SolidBrush brush = new SolidBrush(Figure.colors[mine[i][j]]);
+                        SolidBrush brush = new SolidBrush(Figure.colors[gameboard[i][j]]);
                         Pen pen = new Pen(brush);
                         Rectangle rectangle = new Rectangle(j * Block.size, i * Block.size, Block.size, Block.size);
                         g.DrawRectangle(pen, rectangle);
@@ -287,7 +276,7 @@ namespace Tetris
                 }
             }
             figure.Draw(g);
-            gameboard.Image = bmp;
+            boardBox.Image = bmp;
         }
 
         Figure MakeFigure()
@@ -300,7 +289,45 @@ namespace Tetris
             return new Figure(type, color, 3, 0);
         }
 
-        private void TetrisForm_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
+        public TetrisForm()
+        {
+            InitializeComponent();
+        }
+
+        private void startButton_Click(object sender, EventArgs e)
+        {
+            focusLabel.Focus();
+            Start();
+        }
+
+        private void helpButton_Click(object sender, EventArgs e)
+        {
+            HelpForm help = new HelpForm();
+            timer.Stop();
+            help.ShowDialog();
+            if (!pause)
+            {
+                timer.Start();
+            }
+            focusLabel.Focus();
+        }
+
+        private void pauseButton_Click(object sender, EventArgs e)
+        {
+            if (timer.Enabled)
+            {
+                timer.Stop();
+                pause = true;
+            }
+            else if (!gameover)
+            {
+                timer.Start();
+                pause = false;
+            }
+            focusLabel.Focus();
+        }
+
+        private void focusLabel_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
         {
             if (e.KeyCode == Keys.Up ||
                 e.KeyCode == Keys.Down ||
@@ -313,27 +340,25 @@ namespace Tetris
 
         private void TetrisForm_KeyUp(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.Left)
+            if (!pause)
             {
-                MoveFigure(-1, 0);
+                if (e.KeyCode == Keys.Left)
+                {
+                    MoveFigure(-1, 0);
+                }
+                if (e.KeyCode == Keys.Right)
+                {
+                    MoveFigure(1, 0);
+                }
+                if (e.KeyCode == Keys.Up)
+                {
+                    RotateFigure();
+                }
+                if (e.KeyCode == Keys.Down)
+                {
+                    MoveFigure(0, 1);
+                }
             }
-            if (e.KeyCode == Keys.Right)
-            {
-                MoveFigure(1, 0);
-            }
-            if (e.KeyCode == Keys.Up)
-            {
-                RotateFigure();
-            }
-            if (e.KeyCode == Keys.Down)
-            {
-                MoveFigure(0, 1);
-            }
-        }
-
-        public TetrisForm()
-        {
-            InitializeComponent();
         }
     }
 }

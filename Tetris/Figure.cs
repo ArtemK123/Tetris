@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Drawing;
 
 namespace Tetris
@@ -58,7 +55,7 @@ namespace Tetris
                 Color.Red,
                 Color.Navy,
                 Color.Lime,
-                Color.Aqua,
+                Color.Blue,
                 Color.Magenta,
                 Color.Orange,
                 Color.Chocolate,
@@ -83,7 +80,6 @@ namespace Tetris
         public int config;
         public int x, y;
         public string type;
-
 
         public Figure(string type, Color color, int x, int y)
         {
